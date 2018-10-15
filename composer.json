@@ -1,0 +1,17 @@
+{
+    "name": "despark/graphql-bundle",
+    "description": "Symfony bundle to wrap https://github.com/digiaonline/graphql-php",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ludmil Simeonov",
+            "email": "lsimeonov@despark.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "digiaonline/graphql": "1.0.0-beta4",
+        "symfony/framework-bundle": "^4.1"
+    }
+}
