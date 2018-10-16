@@ -1,0 +1,3 @@
+graphql_routes:
+    resource: 'Despark\GraphQLBundle\Route\GraphQLRouteLoader:loadRoutes'
+    type: service

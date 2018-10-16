@@ -1,0 +1,14 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Despark\GraphQLBundle\Route\GraphQLRouteLoader:
+        public: true
+
+    Despark\GraphQLBundle\GraphQLServiceManager:
+        class: Despark\GraphQLBundle\GraphQLServiceManager
+
+    Despark\GraphQLBundle\Controller\GraphQLController:
+        arguments: ['@Despark\GraphQLBundle\GraphQLServiceManager']
