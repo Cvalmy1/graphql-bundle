@@ -3,12 +3,13 @@
 namespace Despark\GraphQLBundle;
 
 use Digia\GraphQL\Schema\Resolver\ResolverInterface;
+use Illuminate\Contracts\Support\Arrayable;
 
 /**
  * Class ResolverRegistry
  * @package Despark\GraphQLBundle
  */
-class ResolverRegistry
+class ResolverRegistry implements Arrayable
 {
 
     /**
@@ -16,9 +17,12 @@ class ResolverRegistry
      */
     private $resolvers = [];
 
-    public function addResolver($name, ResolverInterface $resolver)
+    public function addResolver(string $name, ResolverInterface $resolver, string $parent = null)
     {
-        $this->resolvers[$name] = $resolver;
+        $this->resolvers[$name] = [
+            'resolver' => $resolver,
+            'parent' => $parent,
+        ];
     }
 
     /**
@@ -27,6 +31,16 @@ class ResolverRegistry
     public function getResolvers(): array
     {
         return $this->resolvers;
+    }
+
+    public function toArray()
+    {
+        $a = [];
+        foreach ($this->resolvers as $type => $resolverOptions) {
+            if (is_null($resolverOptions['parent'])) {
+                $a[$type] = $resolverOptions['resolver'];
+            }
+        }
     }
 
 }

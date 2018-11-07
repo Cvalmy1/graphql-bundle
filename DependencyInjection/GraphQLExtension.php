@@ -3,8 +3,8 @@
 namespace Despark\GraphQLBundle\DependencyInjection;
 
 use Despark\GraphQLBundle\Factory\SchemaFactory;
-use Despark\GraphQLBundle\GraphQLServiceManager;
 use Despark\GraphQLBundle\GraphQLService;
+use Despark\GraphQLBundle\GraphQLServiceManager;
 use Despark\GraphQLBundle\ResolverRegistry;
 use Despark\GraphQLBundle\Route\GraphQLRouteLoader;
 use Digia\GraphQL\Schema\Schema;
@@ -31,6 +31,7 @@ class GraphQLExtension extends Extension
      *
      * @param array $configs
      * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+     *
      * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container)
@@ -60,6 +61,7 @@ class GraphQLExtension extends Extension
      * @param string $name
      * @param array $options
      * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+     *
      * @return \Symfony\Component\DependencyInjection\Definition
      */
     private function addSchema(string $name, array $options, ContainerBuilder $container): Definition
@@ -95,20 +97,35 @@ class GraphQLExtension extends Extension
      * @param string $name
      * @param array $resolvers
      * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
+     *
      * @return \Symfony\Component\DependencyInjection\Definition
      */
     private function registerResolvers(string $name, array $resolvers, ContainerBuilder $container): Definition
     {
         $definition = $container->register('graphql.resolvers.'.$name, ResolverRegistry::class);
 
-        foreach ($resolvers as $type => $resolverClass) {
-            $resolverDefinition = $container->register($resolverClass, $resolverClass)
-                                            ->setAutoconfigured(true)
-                                            ->setAutowired(true);
-            $definition->addMethodCall('addResolver', [$type, $resolverDefinition]);
-        }
+        $this->recurseResolvers($resolvers, $container, $definition);
 
         return $definition;
+    }
+
+    private function recurseResolvers(
+        array $resolvers,
+        ContainerBuilder $container,
+        Definition $resolverRegistry,
+        string $parent = null
+    ) {
+
+        foreach ($resolvers as $type => $resolver) {
+            if (is_string($resolver)) {
+                $resolverDefinition = $container->register($resolver, $resolver)
+                                                ->setAutoconfigured(true)
+                                                ->setAutowired(true);
+                $resolverRegistry->addMethodCall('addResolver', [$type, $resolverDefinition, $parent]);
+            } elseif (is_array($resolver)) {
+                $this->recurseResolvers($resolver, $container, $resolverRegistry, $type);
+            }
+        }
     }
 
     /**

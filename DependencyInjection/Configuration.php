@@ -39,16 +39,8 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue(self::DEFAULT_ROUTE)
                                 ->treatNullLike(self::DEFAULT_ROUTE)
                             ->end()
-                            ->arrayNode('resolvers')
-                                ->useAttributeAsKey('type')
+                            ->variableNode('resolvers')
                                 ->isRequired()
-                                ->requiresAtLeastOneElement()
-                                ->beforeNormalization()
-                                    ->always(function($resolvers){
-                                        return $this->normalizeResolvers($resolvers);
-                                    })
-                                ->end()
-                                ->prototype('scalar')->end()
                                 ->validate()
                                 ->always(function($resolvers){
                                     $this->validateResolvers($resolvers);
@@ -67,24 +59,29 @@ class Configuration implements ConfigurationInterface
 
     /**
      * @param array $resolvers
+     *
+     * @param bool $recursed
+     *
      * @return void
      * @throws \Despark\GraphQLBundle\Exceptions\ConfigurationException
      */
-    private function validateResolvers(array $resolvers): void
+    private function validateResolvers(array $resolvers, $recursed = false): void
     {
-        if (!array_key_exists('Query', $resolvers)) {
+        if (!$recursed && !array_key_exists('Query', $resolvers)) {
             throw new ConfigurationException('Missing query resolver');
         }
 
-        foreach ($resolvers as $class) {
-            if (!class_exists($class)) {
-                throw new ConfigurationException(sprintf('Resolver class: `%s` does not exist', $class));
+        foreach ($resolvers as $resolver) {
+            if (is_array($resolver)) {
+                $this->validateResolvers($resolver, true);
+            } elseif (!class_exists($resolver)) {
+                throw new ConfigurationException(sprintf('Resolver class: `%s` does not exist', $resolver));
             } else {
-                if (!is_a($class, ResolverInterface::class, true)) {
+                if (!is_a($resolver, ResolverInterface::class, true)) {
                     throw new ConfigurationException(
                         sprintf(
                             'Resolver class: `%s` does not implement `%s` interface',
-                            $class,
+                            $resolver,
                             ResolverInterface::class
                         )
                     );
@@ -93,11 +90,23 @@ class Configuration implements ConfigurationInterface
         }
     }
 
+    /**
+     * @param array $resolvers
+     *
+     * @return array
+     * @deprecated
+     */
     private function normalizeResolvers(array $resolvers): array
     {
-        return array_combine(
-            array_map('ucfirst', array_keys($resolvers)),
-            array_values($resolvers)
-        );
+        $normalizedResolvers = [];
+
+        foreach ($resolvers as $key => &$value) {
+            if (is_array($value)) {
+                $value = $this->normalizeResolvers($value);
+            }
+            $normalizedResolvers[ucfirst($key)] = $value;
+        }
+
+        return $normalizedResolvers;
     }
 }

@@ -23,7 +23,7 @@ class SchemaFactory
     {
         $sourceBuilder = new FileSourceBuilder($sdlPath);
 
-        return buildSchema($sourceBuilder->build(), $resolverRegistry->getResolvers());
+        return buildSchema($sourceBuilder->build(), $resolverRegistry->toArray());
     }
 
 }
